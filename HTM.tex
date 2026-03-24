@@ -1,0 +1,119 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\title{Produto Equivalente a Uma Matriz de Transformação Homogênea}
+\author{}
+\date{}
+
+\newcommand{\questeq}{\stackrel{?}{=}}
+
+\begin{document}
+
+\maketitle
+
+\section{Questão}
+
+Seja
+
+\begin{equation}
+    \mathbf{T} = \begin{bmatrix}
+        \mathbf{Q} & \mathbf{s} \\
+        \mathbf{0}_{1\times 3} & 1
+    \end{bmatrix}
+\end{equation}
+
+uma matriz de transformação homogênea, onde $\mathbf{Q}$ é uma matriz de rotação $3 \times 3$ e $\mathbf{s}$ é um vetor de translação $3 \times 1$.
+
+Há uma matriz $4 \times 4$, $\mathbf{M}$, e um escalar, $\alpha$, tais que $\alpha \in \mathbb{R}$, $\mathbf{M} \neq \mathbf{T}$, e
+
+\begin{equation}
+    \mathbf{T}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} = \mathbf{M}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix}
+\end{equation}
+
+se verifica para todo vetor $\mathbf{p} \in \mathbb{R}^3$?
+
+\section{Investigação}
+
+Seja $\mathbf{M} = \begin{bmatrix}
+    \mathbf{A} & \mathbf{b} \\
+    \mathbf{c}^T & d
+\end{bmatrix}$, onde $\mathbf{A}$ é uma matriz $3 \times 3$, $\mathbf{b}$ é um vetor $3 \times 1$, $\mathbf{c}$ é um vetor $3 \times 1$, e $d$ é um escalar.
+
+Se a condição dada é verdadeira,
+
+\begin{align}
+    \begin{bmatrix}
+        \mathbf{Q} & \mathbf{s} \\
+        \mathbf{0}_{1\times 3} & 1
+    \end{bmatrix}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} &=
+    \begin{bmatrix}
+        \mathbf{A} & \mathbf{b} \\
+        \mathbf{c}^T & d
+    \end{bmatrix}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix} \\
+    \begin{bmatrix}
+        \mathbf{Q}\mathbf{p} + \mathbf{s} \\
+        1
+    \end{bmatrix} &=
+    \begin{bmatrix}
+        \mathbf{A}\mathbf{p} + \alpha\mathbf{b} \\
+        \mathbf{c}^T\mathbf{p} + \alpha d
+    \end{bmatrix}
+\end{align}
+
+Para que isso seja verdade para todo $\mathbf{p}$,
+
+\begin{align}
+    \mathbf{Q}\mathbf{p} + \mathbf{s} &=
+    \mathbf{A}\mathbf{p} + \alpha\mathbf{b} \label{eq:vetor_0} \\
+    1 &=
+    \mathbf{c}^T\mathbf{p} + \alpha d \label{eq:vetor_1}
+\end{align}
+
+De (\ref{eq:vetor_1}), temos que $\mathbf{c}^T\mathbf{p} = 1 - \alpha d$. Para que isso seja verdade para todo $\mathbf{p}$, $\mathbf{c}$ deve ser o vetor nulo e $d$ deve ser igual a $1/\alpha$.
+
+De (\ref{eq:vetor_0}), temos que $\mathbf{Q}\mathbf{p} + \mathbf{s} = \mathbf{A}\mathbf{p} + \alpha\mathbf{b}$, que requer $\mathbf{Q} = \mathbf{A}$ e $\mathbf{b} = \mathbf{s}/\alpha$.
+
+Portanto, para $\alpha \in \mathbb{R} \backslash \{0, 1\}$, $\mathbf{c} = \mathbf{0}$, $d = 1/\alpha$, $\mathbf{A} = \mathbf{Q}$, e $\mathbf{b} = \mathbf{s}/\alpha$, temos que
+
+\begin{equation}
+    \begin{cases}
+        \mathbf{M} \neq \mathbf{T} \\
+        \mathbf{T}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} =
+        \mathbf{M}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix}
+    \end{cases}
+\end{equation}
+
+São $\mathbf{M}$ e $\mathbf{T}$ linearmente independentes?
+
+Se forem dependentes, $\mathbf{M} = k\mathbf{T}$ para algum $k \in \mathbb{R}$.
+
+\begin{equation}
+    \begin{bmatrix}
+        \mathbf{A} & \mathbf{b} \\
+        \mathbf{0}_{1\times 3} & 1/\alpha
+    \end{bmatrix} =
+    \begin{bmatrix}
+        k\mathbf{Q} & k\mathbf{s} \\
+        \mathbf{0}_{1\times 3} & k
+    \end{bmatrix}
+\end{equation}
+
+O que implica em $\mathbf{Q} = k\mathbf{Q}$, o que requer $k = 1$. No entanto, isso contradiz a condição de que $\mathbf{M} \neq \mathbf{T}$. Portanto, $\mathbf{M}$ e $\mathbf{T}$ são linearmente independentes.
+
+\section{Conclusão}
+
+Sim, existe uma matriz $4 \times 4$, $\mathbf{M}$, e um escalar, $\alpha$, tais que $\alpha \in \mathbb{R}$, $\mathbf{M} \neq \mathbf{T}$, e
+
+\begin{equation}
+    \mathbf{T}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} = \mathbf{M}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix}
+\end{equation}
+
+se verifica para todo vetor $\mathbf{p} \in \mathbb{R}^3$.
+
+Além disso, $\mathbf{M}$ e $\mathbf{T}$ são linearmente independentes.
+
+Qual a aplicação disso? Não sei.
+
+\end{document}
