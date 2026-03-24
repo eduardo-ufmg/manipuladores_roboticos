@@ -1,17 +1,10 @@
-\documentclass{article}
+\documentclass[a4paper]{article}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
-
-\title{Produto Equivalente a Uma Matriz de Transformação Homogênea}
-\author{}
-\date{}
-
-\newcommand{\questeq}{\stackrel{?}{=}}
+\usepackage[margin=0.5in]{geometry}
 
 \begin{document}
-
-\maketitle
 
 \section{Questão}
 
@@ -100,7 +93,7 @@ Se forem dependentes, $\mathbf{M} = k\mathbf{T}$ para algum $k \in \mathbb{R}$.
     \end{bmatrix}
 \end{equation}
 
-O que implica em $\mathbf{Q} = k\mathbf{Q}$, o que requer $k = 1$. No entanto, isso contradiz a condição de que $\mathbf{M} \neq \mathbf{T}$. Portanto, $\mathbf{M}$ e $\mathbf{T}$ são linearmente independentes.
+Dado que, de (\ref{eq:vetor_0}), $\mathbf{A} = \mathbf{Q}$ e $\mathbf{b} = \mathbf{s}/\alpha$, temos que $k = 1$ e $k = 1/\alpha$. Isso é uma contradição, pois $\alpha \neq 1$. Portanto, $\mathbf{M}$ e $\mathbf{T}$ são linearmente independentes.
 
 \section{Conclusão}
 
