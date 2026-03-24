@@ -70,13 +70,19 @@ De (\ref{eq:vetor_0}), temos que $\mathbf{Q}\mathbf{p} + \mathbf{s} = \mathbf{A}
 
 Portanto, para $\alpha \in \mathbb{R} \backslash \{0, 1\}$, $\mathbf{c} = \mathbf{0}$, $d = 1/\alpha$, $\mathbf{A} = \mathbf{Q}$, e $\mathbf{b} = \mathbf{s}/\alpha$, temos que
 
-\begin{equation}
-    \begin{cases}
-        \mathbf{M} \neq \mathbf{T} \\
-        \mathbf{T}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} =
-        \mathbf{M}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix}
-    \end{cases}
-\end{equation}
+\begin{align}
+    \begin{bmatrix}
+        \mathbf{Q} & \mathbf{s} \\
+        \mathbf{0}_{1\times 3} & 1
+    \end{bmatrix}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} &=
+    \begin{bmatrix}
+        \mathbf{Q} & \mathbf{s}/\alpha \\
+        \mathbf{0}_{1\times 3} & 1/\alpha
+    \end{bmatrix}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix} \\
+    \mathbf{T}\cdot\begin{bmatrix}\mathbf{p} \\ 1\end{bmatrix} &=
+    \mathbf{M}\cdot\begin{bmatrix}\mathbf{p} \\ \alpha\end{bmatrix} \\
+    \mathbf{T} &\neq \mathbf{M}
+\end{align}
 
 São $\mathbf{M}$ e $\mathbf{T}$ linearmente independentes?
 
