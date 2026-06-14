@@ -124,3 +124,6 @@ latexmkrc
 
 # Temporary directories
 _texpad_tmp/
+
+# Temporary references
+trabalho/refs
