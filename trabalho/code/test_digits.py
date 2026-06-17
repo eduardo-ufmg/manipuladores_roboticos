@@ -1,6 +1,8 @@
-import pytest
 import math
+
 import matplotlib.pyplot as plt
+import pytest
+
 from trajectory.digits import DIGITS
 
 

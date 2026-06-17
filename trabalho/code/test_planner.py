@@ -1,12 +1,11 @@
-import pytest
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+from matplotlib.patches import Rectangle
 
 from geometry.board import Board
 from geometry.transforms import create_orthonormal_frame
 from trajectory.planner import WritingPlanner
-
-from matplotlib.patches import Rectangle
 
 
 @pytest.fixture

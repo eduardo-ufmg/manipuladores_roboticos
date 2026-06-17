@@ -1,5 +1,6 @@
-import pytest
 import numpy as np
+import pytest
+
 from geometry.board import Board
 from geometry.transforms import create_orthonormal_frame
 

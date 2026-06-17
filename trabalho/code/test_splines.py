@@ -1,8 +1,9 @@
-import pytest
-import numpy as np
 import matplotlib.pyplot as plt
-from trajectory.spline import StrokeSpline
+import numpy as np
+import pytest
+
 from trajectory.digits import DIGITS
+from trajectory.spline import StrokeSpline
 
 
 @pytest.fixture

@@ -1,7 +1,8 @@
-import numpy as np
-from scipy.interpolate import make_interp_spline, PchipInterpolator
-from scipy.integrate import cumulative_trapezoid
 from typing import TypeAlias
+
+import numpy as np
+from scipy.integrate import cumulative_trapezoid
+from scipy.interpolate import PchipInterpolator, make_interp_spline
 
 Stroke: TypeAlias = list[tuple[float, float]]
 

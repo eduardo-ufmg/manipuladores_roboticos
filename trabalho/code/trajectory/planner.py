@@ -1,6 +1,7 @@
-import numpy as np
 from dataclasses import dataclass
 from typing import TypeAlias
+
+import numpy as np
 
 from geometry.board import Board
 from trajectory.digits import DIGITS
