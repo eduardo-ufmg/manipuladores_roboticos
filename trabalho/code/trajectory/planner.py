@@ -33,13 +33,13 @@ class WritingPlanner:
         self.transition_speed = 0.10  # m/s
         self.dt = 0.01  # Trajectory sample rate (100 Hz)
 
-    def plan(self, code: str) -> Trajectory:
+    def plan(self, code: str, start_time: float = 0.0) -> Trajectory:
         """Assembles the writing trajectory for a 1- to 3-digit code."""
         if not code.isdigit() or not (1 <= len(code) <= 3):
             raise ValueError("Code must be a 1 to 3 digit numeric string.")
 
         trajectory: Trajectory = []
-        current_time = 0.0
+        current_time = start_time
 
         cell_width = self.board.width / 3.0
         v_offset = (self.board.height - self.digit_height) / 2.0
@@ -67,13 +67,13 @@ class WritingPlanner:
                 # Free-space transition to the new stroke approach point
                 if trajectory:
                     p_last = trajectory[-1].position
-                    transition_pts, current_time = self._generate_cubic_motion(
+                    transition_pts, current_time = self.generate_cubic_motion(
                         p_last, p_approach_start, self.transition_speed, current_time
                     )
                     trajectory.extend(transition_pts)
 
                 # Approach motion (drop to board)
-                approach_pts, current_time = self._generate_cubic_motion(
+                approach_pts, current_time = self.generate_cubic_motion(
                     p_approach_start, p_write_start, self.transition_speed, current_time
                 )
                 trajectory.extend(approach_pts)
@@ -94,14 +94,14 @@ class WritingPlanner:
                     u_end, v_end, self.approach_distance
                 )
 
-                retreat_pts, current_time = self._generate_cubic_motion(
+                retreat_pts, current_time = self.generate_cubic_motion(
                     p_write_end, p_retreat_end, self.transition_speed, current_time
                 )
                 trajectory.extend(retreat_pts)
 
         return trajectory
 
-    def _generate_cubic_motion(
+    def generate_cubic_motion(
         self, p0: np.ndarray, pf: np.ndarray, speed: float, start_time: float
     ) -> tuple[Trajectory, float]:
         """Generates a rest-to-rest minimum-jerk profile for safe transitions."""
@@ -126,6 +126,7 @@ class WritingPlanner:
             pos = p0 + s * (pf - p0)
             vel = (ds_dtau / duration) * (pf - p0)
 
+            # Invert the normal: must strictly oppose the board
             pts.append(TrajectoryPoint(pos, vel, -self.board.normal, t_current))
 
         return pts, t_current
@@ -158,6 +159,7 @@ class WritingPlanner:
             v = v_offset + pos_2d[1] * self.digit_height
             pos_3d = self.board.board_to_world(u, v)
 
+            # Invert the normal: must strictly oppose the board
             pts.append(TrajectoryPoint(pos_3d, vel_3d, -self.board.normal, t_current))
 
             s_norm += ds_dt * self.dt
