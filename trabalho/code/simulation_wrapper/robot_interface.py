@@ -23,7 +23,7 @@ class RobotInterface:
         Returns the geometric Jacobian, current end-effector position,
         and current end-effector z-axis.
         """
-        Jg, fk = self.robot.jac_geo(np.matrix(self.q_current))
+        Jg, fk = self.robot.jac_geo(np.ndarray(self.q_current))
         Jg = np.asarray(Jg, dtype=float)
         fk = np.asarray(fk, dtype=float)
 
