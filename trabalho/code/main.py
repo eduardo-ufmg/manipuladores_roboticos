@@ -67,4 +67,4 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
 
 if __name__ == "__main__":
     # Execute a visual test
-    execute_writing_task("042", headless=False)
+    execute_writing_task("666", headless=False)
