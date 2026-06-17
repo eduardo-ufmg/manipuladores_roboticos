@@ -100,63 +100,70 @@ def test_velocity_smoothness(planner):
 
 def test_trajectory_visualization(planner):
     """Visual confirmation of trajectory layout and segmentation."""
-    trajectory = planner.plan("042")
 
-    # Separate into writing (on board) and transition (off board)
-    write_pts = []
-    trans_pts = []
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+    axes = axes.ravel()
 
-    for pt in trajectory:
-        vec = pt.position - planner.board.origin
-        dist = np.dot(vec, planner.board.normal)
-        u = np.dot(vec, planner.board.x_axis)
-        v = np.dot(vec, planner.board.y_axis)
+    codes = ["123", "456", "789", "666", "343", "101"]
 
-        if np.isclose(dist, planner.board.safety_offset, atol=1e-4):
-            write_pts.append((u, v))
-        else:
-            trans_pts.append((u, v))
+    for ax, code in zip(axes, codes):
+        trajectory = planner.plan(code)
 
-    fig, ax = plt.subplots(figsize=(10, 4))
+        write_pts = []
+        trans_pts = []
 
-    # Plot board boundaries
-    rect = Rectangle(
-        (0, 0),
-        planner.board.width,
-        planner.board.height,
-        fill=False,
-        color="black",
-        linewidth=2,
-    )
-    ax.add_patch(rect)
+        for pt in trajectory:
+            vec = pt.position - planner.board.origin
+            dist = np.dot(vec, planner.board.normal)
+            u = np.dot(vec, planner.board.x_axis)
+            v = np.dot(vec, planner.board.y_axis)
 
-    # Cell dividers
-    for i in range(1, 3):
-        ax.axvline(i * planner.board.width / 3.0, color="gray", linestyle="--")
+            if np.isclose(dist, planner.board.safety_offset, atol=1e-4):
+                write_pts.append((u, v))
+            else:
+                trans_pts.append((u, v))
 
-    ax.scatter(
-        [p[0] for p in trans_pts],
-        [p[1] for p in trans_pts],
-        c="lightgray",
-        s=1,
-        label="Transition Path",
-    )
-    ax.scatter(
-        [p[0] for p in write_pts],
-        [p[1] for p in write_pts],
-        c="blue",
-        s=3,
-        label="Writing Path",
-    )
+        # Board outline
+        rect = Rectangle(
+            (0, 0),
+            planner.board.width,
+            planner.board.height,
+            fill=False,
+            color="black",
+            linewidth=2,
+        )
+        ax.add_patch(rect)
 
-    ax.set_aspect("equal")
-    ax.set_title("Full Planner Trajectory Output (Projected to 2D)")
-    ax.legend()
+        # Cell dividers
+        for i in range(1, 3):
+            ax.axvline(
+                i * planner.board.width / 3.0,
+                color="gray",
+                linestyle="--",
+            )
+
+        if trans_pts:
+            ax.scatter(
+                [p[0] for p in trans_pts],
+                [p[1] for p in trans_pts],
+                c="lightgray",
+                s=1,
+            )
+
+        if write_pts:
+            ax.scatter(
+                [p[0] for p in write_pts],
+                [p[1] for p in write_pts],
+                c="blue",
+                s=3,
+            )
+
+        ax.set_aspect("equal")
+        ax.set_title(code)
+
+    fig.suptitle("Planner Trajectories", fontsize=16)
+    fig.tight_layout()
 
     output_path = "trajectory/full_trajectory.png"
-    plt.savefig(output_path)
+    fig.savefig(output_path, dpi=300)
     plt.close(fig)
-
-    import os
-
-    assert os.path.exists(output_path)
