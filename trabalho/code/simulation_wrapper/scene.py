@@ -44,7 +44,12 @@ class Scene:
         htm_board[0:3, 2] = board.normal
         # Shift the box backward along the normal so the surface lies exactly at origin
         thickness = 0.02
-        htm_board[0:3, 3] = board.origin - board.normal * (thickness / 2.0)
+        center_offset = (board.width / 2.0) * board.x_axis + (
+            board.height / 2.0
+        ) * board.y_axis
+        htm_board[0:3, 3] = (
+            board.origin + center_offset - board.normal * (thickness / 2.0)
+        )
 
         self.board_viz = ub.Box(
             name="board_surface",
@@ -53,6 +58,7 @@ class Scene:
             height=thickness,
             htm=np.matrix(htm_board),
             color="white",
+            opacity=0.8,
         )
 
         # ── Moving target marker (existing behaviour) ──────────────────────────

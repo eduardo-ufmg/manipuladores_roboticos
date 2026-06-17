@@ -80,7 +80,8 @@ def test_orientation_consistency(planner):
     """Test 5.2 — Orientation consistency"""
     trajectory = planner.plan("8")
     for pt in trajectory:
-        np.testing.assert_allclose(pt.normal, planner.board.normal)
+        # Assert against negative board normal
+        np.testing.assert_allclose(pt.normal, -planner.board.normal)
 
 
 def test_velocity_smoothness(planner):

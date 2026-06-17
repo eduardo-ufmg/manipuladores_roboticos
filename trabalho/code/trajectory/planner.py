@@ -126,7 +126,7 @@ class WritingPlanner:
             pos = p0 + s * (pf - p0)
             vel = (ds_dtau / duration) * (pf - p0)
 
-            pts.append(TrajectoryPoint(pos, vel, self.board.normal, t_current))
+            pts.append(TrajectoryPoint(pos, vel, -self.board.normal, t_current))
 
         return pts, t_current
 
@@ -158,7 +158,7 @@ class WritingPlanner:
             v = v_offset + pos_2d[1] * self.digit_height
             pos_3d = self.board.board_to_world(u, v)
 
-            pts.append(TrajectoryPoint(pos_3d, vel_3d, self.board.normal, t_current))
+            pts.append(TrajectoryPoint(pos_3d, vel_3d, -self.board.normal, t_current))
 
             s_norm += ds_dt * self.dt
             t_current += self.dt

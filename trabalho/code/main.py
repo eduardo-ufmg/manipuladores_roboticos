@@ -15,11 +15,20 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     """
     # 1. Initialize Geometry (Positioned in front of the robot)
     origin = np.array([0.5, 0.0, 0.5])
-    normal = np.array([1.0, 0.0, 0.0])
+    normal = np.array([-1.0, 0.0, 0.0])
     up_ref = np.array([0.0, 0.0, 1.0])
     x, y, z = create_orthonormal_frame(normal, up_ref)
 
-    board = Board(width=0.60, height=0.25, origin=origin, x_axis=x, y_axis=y, normal=z)
+    width = 0.60
+    height = 0.25
+
+    # Define origin such that the physical center lies at X=0.6, Y=0.0, Z=0.5
+    board_center = np.array([0.6, 0.0, 0.5])
+    origin = board_center - (width / 2.0) * x - (height / 2.0) * y
+
+    board = Board(
+        width=width, height=height, origin=origin, x_axis=x, y_axis=y, normal=z
+    )
 
     # 2. Generate Trajectory
     planner = WritingPlanner(board)
