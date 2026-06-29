@@ -86,7 +86,13 @@ class Scene:
             [self.robot, self.board_viz, self.target_marker, *self._trail_balls]
         )
 
-    def record_frame(self, time: float, target_pos: np.ndarray, q_current: np.ndarray):
+    def record_frame(
+        self,
+        time: float,
+        target_pos: np.ndarray,
+        q_current: np.ndarray,
+        is_writing: bool = True,
+    ):
         """Saves a single animation step to the simulation."""
         self.robot.add_ani_frame(time=time, q=np.matrix(q_current))
 
@@ -94,28 +100,29 @@ class Scene:
         htm_target[0:3, 3] = target_pos.flatten()
         self.target_marker.add_ani_frame(time=time, htm=np.matrix(htm_target))
 
-        # Trail: drop a marker every _TRAIL_SAMPLE cycles
-        self._cycle_count += 1
-        if self._cycle_count >= _TRAIL_SAMPLE and self._trail_idx < len(
-            self._trail_balls
-        ):
-            self._cycle_count = 0
-            ball = self._trail_balls[self._trail_idx]
+        # Trail: drop a marker every _TRAIL_SAMPLE cycles only during the write phase
+        if is_writing:
+            self._cycle_count += 1
+            if self._cycle_count >= _TRAIL_SAMPLE and self._trail_idx < len(
+                self._trail_balls
+            ):
+                self._cycle_count = 0
+                ball = self._trail_balls[self._trail_idx]
 
-            htm_effector = self.robot.fkm(q_current)
+                htm_effector = self.robot.fkm(q_current)
 
-            htm_ball = np.identity(4)
-            htm_ball[0:3, 3] = htm_effector[0:3, 3].flatten()
+                htm_ball = np.identity(4)
+                htm_ball[0:3, 3] = htm_effector[0:3, 3].flatten()
 
-            # Frame just before: still off-screen (avoids interpolated drift)
-            ball.add_ani_frame(
-                time=max(0.0, time - _TRAIL_SNAP_EPS),
-                htm=_off_screen(),
-            )
-            # Frame at current time: snap to position and stay there permanently
-            ball.add_ani_frame(time=time, htm=np.matrix(htm_ball))
+                # Frame just before: still off-screen (avoids interpolated drift)
+                ball.add_ani_frame(
+                    time=max(0.0, time - _TRAIL_SNAP_EPS),
+                    htm=_off_screen(),
+                )
+                # Frame at current time: snap to position and stay there permanently
+                ball.add_ani_frame(time=time, htm=np.matrix(htm_ball))
 
-            self._trail_idx += 1
+                self._trail_idx += 1
 
     def render(self):
         """Executes the HTML rendering."""

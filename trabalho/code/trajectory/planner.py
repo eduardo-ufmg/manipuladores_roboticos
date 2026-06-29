@@ -13,6 +13,7 @@ class TrajectoryPoint:
     velocity: np.ndarray
     normal: np.ndarray
     timestamp: float
+    is_writing: bool = False
 
 
 Trajectory: TypeAlias = list[TrajectoryPoint]
@@ -217,7 +218,9 @@ class WritingPlanner:
                 u, v, du_dt, dv_dt, offset=0.0
             )
 
-            pts.append(TrajectoryPoint(pos_3d, vel_3d, -normal, t_current))
+            pts.append(
+                TrajectoryPoint(pos_3d, vel_3d, -normal, t_current, is_writing=True)
+            )
 
             s_norm += ds_dt * self.dt
             t_current += self.dt

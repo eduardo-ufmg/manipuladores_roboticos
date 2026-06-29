@@ -124,7 +124,7 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
         robot_if.update_joints(q_new)
 
         if not headless:
-            scene.record_frame(pt.timestamp, pt.position, robot_if.q_current)  # type: ignore
+            scene.record_frame(pt.timestamp, pt.position, robot_if.q_current, is_writing=pt.is_writing)  # type: ignore
 
     if not headless:
         scene.render()  # type: ignore
