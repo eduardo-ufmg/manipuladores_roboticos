@@ -133,4 +133,23 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
 
 
 if __name__ == "__main__":
-    execute_writing_task("666", headless=False)
+
+    code = "000"
+
+    while True:
+        try:
+            code = input("Enter a 3-digit code (or 'exit' to quit): ")
+            if code.lower() == "exit":
+                break
+            if len(code) != 3 or not code.isdigit():
+                print("Invalid input. Please enter a 3-digit code.")
+                continue
+
+            max_tracking_error = execute_writing_task(code, headless=False)
+            print(
+                f"Maximum tracking error for code {code}: {max_tracking_error:.6f} meters"
+            )
+
+        except KeyboardInterrupt:
+            print("\nExecution interrupted by user.")
+            break
