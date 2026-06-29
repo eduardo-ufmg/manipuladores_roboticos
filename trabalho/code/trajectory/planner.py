@@ -21,8 +21,11 @@ Trajectory: TypeAlias = list[TrajectoryPoint]
 class WritingSurface(Protocol):
     """Protocol defining the required geometric interface for any target manifold."""
 
-    width: float
-    height: float
+    @property
+    def width(self) -> float: ...
+
+    @property
+    def height(self) -> float: ...
 
     def evaluate_kinematics(
         self,

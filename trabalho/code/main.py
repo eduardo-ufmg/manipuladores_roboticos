@@ -18,8 +18,8 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     Jg, p_home, z_home = robot_if.get_kinematics()
 
     # 2. Initialize Manifold Geometry
-    # Define origin such that the physical center lies at X=0.6, Y=0.0, Z=0.5
-    center = np.array([0.6, 0.0, 0.5])
+    # Define origin such that the physical center lies at X=1.0, Y=0.0, Z=0.5
+    center = np.array([1.0, 0.0, 0.5])
 
     # Left-to-right horizontal axis (Longitudinal)
     u_axis = np.array([0.0, -1.0, 0.0])
@@ -31,7 +31,7 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     normal_ref = np.array([-1.0, 0.0, 0.0])
 
     surface = Cylinder(
-        radius=0.15,
+        radius=0.3,
         width=0.60,
         height=0.25,
         center=center,
