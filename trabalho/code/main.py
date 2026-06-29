@@ -1,6 +1,6 @@
 import numpy as np
-from geometry.board import Board
-from geometry.transforms import create_orthonormal_frame
+
+from geometry.cylinder import Cylinder
 from trajectory.planner import WritingPlanner
 from control.tasks import compute_task_error, compute_task_jacobian
 from control.qp_controller import QPController, ControllerConfig
@@ -10,40 +10,50 @@ from simulation_wrapper.scene import Scene
 
 def execute_writing_task(code: str, headless: bool = False) -> float:
     """
-    Executes the full pipeline for a given code.
+    Executes the full pipeline for a given code on a Horizontal Cylinder.
     Returns the maximum tracking error observed during the run.
     """
     # 1. Initialize Robot
     robot_if = RobotInterface()
     Jg, p_home, z_home = robot_if.get_kinematics()
 
-    # 2. Initialize Geometry (Positioned in front of the robot)
-    normal = np.array([-1.0, 0.0, 0.0])
-    up_ref = np.array([0.0, 0.0, 1.0])
-    x, y, z = create_orthonormal_frame(normal, up_ref)
-
-    width = 0.60
-    height = 0.25
-
+    # 2. Initialize Manifold Geometry
     # Define origin such that the physical center lies at X=0.6, Y=0.0, Z=0.5
-    board_center = np.array([0.6, 0.0, 0.5])
-    origin = board_center - (width / 2.0) * x - (height / 2.0) * y
+    center = np.array([0.6, 0.0, 0.5])
 
-    board = Board(
-        width=width, height=height, origin=origin, x_axis=x, y_axis=y, normal=z
+    # Left-to-right horizontal axis (Longitudinal)
+    u_axis = np.array([0.0, -1.0, 0.0])
+
+    # Pointing straight up at the equator (Circumferential tangent)
+    v_tangent = np.array([0.0, 0.0, 1.0])
+
+    # Pointing toward the robot (-X) at the equator (Radial normal)
+    normal_ref = np.array([-1.0, 0.0, 0.0])
+
+    surface = Cylinder(
+        radius=0.15,
+        width=0.60,
+        height=0.25,
+        center=center,
+        u_axis=u_axis,
+        v_tangent=v_tangent,
+        normal_ref=normal_ref,
+        safety_offset=0.01,
     )
 
     # 3. Generate 3-Phase Trajectory
-    planner = WritingPlanner(board)
+    planner = WritingPlanner(surface)
 
     # Extract the very first point of the writing plan to define the engagement goal
     temp_write_traj = planner.plan(code)
     p_write_start = temp_write_traj[0].position
+    write_normal = temp_write_traj[0].normal
 
-    # Phase 1: Engagement (Home -> Board)
-    engage_traj, t1 = planner.generate_cubic_motion(
+    # Phase 1: Engagement (Home -> Cylinder)
+    engage_traj, t1 = planner.generate_cartesian_cubic_motion(
         p0=p_home.flatten(),
         pf=p_write_start,
+        target_normal=write_normal,
         speed=planner.transition_speed,
         start_time=0.0,
     )
@@ -53,10 +63,11 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     t2 = write_traj[-1].timestamp
     p_write_end = write_traj[-1].position
 
-    # Phase 3: Retraction (Board -> Home)
-    retract_traj, _ = planner.generate_cubic_motion(
+    # Phase 3: Retraction (Cylinder -> Home)
+    retract_traj, _ = planner.generate_cartesian_cubic_motion(
         p0=p_write_end,
         pf=p_home.flatten(),
+        target_normal=write_normal,
         speed=planner.transition_speed,
         start_time=t2,
     )
@@ -68,7 +79,7 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     controller = QPController(config, robot_if.n_joints)
 
     # 5. Initialize Simulation Scene
-    scene = None if headless else Scene(robot_if, board)
+    scene = None if headless else Scene(robot_if, surface)
 
     # 6. Closed-Loop Execution
     max_error = 0.0
@@ -103,5 +114,4 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
 
 
 if __name__ == "__main__":
-    # Execute a visual test
     execute_writing_task("666", headless=False)

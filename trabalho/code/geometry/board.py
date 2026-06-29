@@ -58,3 +58,21 @@ class Board:
             + v * self.y_axis
             + (self.safety_offset + approach_distance) * self.normal
         )
+
+    def evaluate_kinematics(
+        self,
+        u: float,
+        v: float,
+        du_dt: float = 0.0,
+        dv_dt: float = 0.0,
+        offset: float = 0.0,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Maps 2D surface state to 3D kinematics for the planar board."""
+        pos = (
+            self.origin
+            + u * self.x_axis
+            + v * self.y_axis
+            + (self.safety_offset + offset) * self.normal
+        )
+        vel = du_dt * self.x_axis + dv_dt * self.y_axis
+        return pos, vel, self.normal

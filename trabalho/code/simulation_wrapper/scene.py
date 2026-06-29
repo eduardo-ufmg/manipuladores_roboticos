@@ -1,6 +1,6 @@
 import numpy as np
 import uaibot as ub
-from geometry.board import Board
+from geometry.cylinder import Cylinder
 
 # ── Trail configuration ────────────────────────────────────────────────────────
 _TRAIL_RADIUS = 0.004  # 4 mm spheres — visible but unobtrusive
@@ -33,30 +33,25 @@ def _trail_color(t: float) -> str:
 
 class Scene:
     def __init__(
-        self, robot_interface, board: Board, max_trail_points: int = _TRAIL_DEFAULT_MAX
+        self,
+        robot_interface,
+        surface: Cylinder,
+        max_trail_points: int = _TRAIL_DEFAULT_MAX,
     ):
         self.robot = robot_interface.robot
 
-        # ── Board ─────────────────────────────────────────────────────────────
-        htm_board = np.identity(4)
-        htm_board[0:3, 0] = board.x_axis
-        htm_board[0:3, 1] = board.y_axis
-        htm_board[0:3, 2] = board.normal
-        # Shift the box backward along the normal so the surface lies exactly at origin
-        thickness = 0.02
-        center_offset = (board.width / 2.0) * board.x_axis + (
-            board.height / 2.0
-        ) * board.y_axis
-        htm_board[0:3, 3] = (
-            board.origin + center_offset - board.normal * (thickness / 2.0)
-        )
+        htm_surface = np.identity(4)
+        htm_surface[0:3, 0] = surface.normal_ref
+        htm_surface[0:3, 1] = surface.v_tangent
+        # uaibot's cylinder length is drawn along its local Z-axis
+        htm_surface[0:3, 2] = surface.u_axis
+        htm_surface[0:3, 3] = surface.center
 
-        self.board_viz = ub.Box(
-            name="board_surface",
-            width=board.width,
-            depth=board.height,
-            height=thickness,
-            htm=np.matrix(htm_board),
+        self.board_viz = ub.Cylinder(
+            name="cylinder_surface",
+            radius=surface.radius,
+            height=0.8,  # Total visual length of the cylinder (can exceed writable width)
+            htm=np.matrix(htm_surface),
             color="white",
             opacity=0.8,
         )
@@ -99,7 +94,7 @@ class Scene:
         htm_target[0:3, 3] = target_pos.flatten()
         self.target_marker.add_ani_frame(time=time, htm=np.matrix(htm_target))
 
-        # ── Trail: drop a marker every _TRAIL_SAMPLE cycles ───────────────────
+        # Trail: drop a marker every _TRAIL_SAMPLE cycles
         self._cycle_count += 1
         if self._cycle_count >= _TRAIL_SAMPLE and self._trail_idx < len(
             self._trail_balls
