@@ -102,8 +102,10 @@ class Scene:
             self._cycle_count = 0
             ball = self._trail_balls[self._trail_idx]
 
+            htm_effector = self.robot.fkm(q_current)
+
             htm_ball = np.identity(4)
-            htm_ball[0:3, 3] = target_pos.flatten()
+            htm_ball[0:3, 3] = htm_effector[0:3, 3].flatten()
 
             # Frame just before: still off-screen (avoids interpolated drift)
             ball.add_ani_frame(
