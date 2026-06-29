@@ -18,8 +18,8 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     Jg, p_home, z_home = robot_if.get_kinematics()
 
     # 2. Initialize Manifold Geometry
-    # Define origin such that the physical center lies at X=1.0, Y=0.0, Z=0.5
-    center = np.array([1.0, 0.0, 0.5])
+    # Define origin such that the physical center lies at X=0.8, Y=0.0, Z=0.5
+    center = np.array([0.8, 0.0, 0.5])
 
     # Left-to-right horizontal axis (Longitudinal)
     u_axis = np.array([0.0, -1.0, 0.0])
@@ -31,7 +31,7 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     normal_ref = np.array([-1.0, 0.0, 0.0])
 
     surface = Cylinder(
-        radius=0.3,
+        radius=0.15,
         width=0.60,
         height=0.25,
         center=center,
@@ -84,6 +84,10 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
     # 6. Closed-Loop Execution
     max_error = 0.0
 
+    # CBF Parameters
+    gamma = 15.0  # Barrier aggressiveness
+    d_safe = 0.01  # Must equal the surface safety_offset
+
     for pt in full_trajectory:
         Jg, current_pos, current_z = robot_if.get_kinematics()
 
@@ -92,6 +96,19 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
 
         Jr = compute_task_jacobian(Jg, current_z, pt.normal)
 
+        # -------------------------------------------------------------
+        # Control Barrier Function (CBF) Formulation
+        # -------------------------------------------------------------
+        dist, surf_normal = surface.compute_distance(current_pos)
+        Jv = Jg[0:3, :]  # Extract 3xN translational Jacobian
+
+        # We require: dot(h) >= -gamma * h
+        # Where h = dist - d_safe, and dot(h) = normal^T * Jv * dot(q)
+        # Yields inequality: -normal^T * Jv * dot(q) <= gamma * (dist - d_safe)
+
+        G_ineq = -surf_normal.reshape(1, 3) @ Jv
+        h_ineq = np.array([gamma * (dist - d_safe)])
+
         q_dot = controller.solve(
             q_current=robot_if.q_current,
             q_min=robot_if.q_min,
@@ -99,6 +116,8 @@ def execute_writing_task(code: str, headless: bool = False) -> float:
             Jr=Jr,
             r_error=r_error,
             v_des=pt.velocity,
+            G_ineq=G_ineq,
+            h_ineq=h_ineq,
         )
 
         q_new = robot_if.q_current + q_dot * config.dt

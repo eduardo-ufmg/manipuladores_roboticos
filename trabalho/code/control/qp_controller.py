@@ -1,33 +1,26 @@
-import warnings
-from dataclasses import dataclass
-
 import numpy as np
 import qpsolvers
-import scipy.sparse as sp
+from dataclasses import dataclass
 
-warnings.filterwarnings(
-    "ignore",
-    category=PendingDeprecationWarning,
-)
+from scipy.sparse import csc_matrix
 
 
 @dataclass(frozen=True)
 class ControllerConfig:
     dt: float = 0.01
-    k0: float = 1.0  # Joint centering gain
-    lambda_d: float = 0.01  # Damping on joint velocities & slacks
-    epsilon: float = 1e-3  # Joint limit margin
-    K_pos: float = 5.0  # Task position gain
-    K_ori: float = 2.0  # Task orientation gain
+    k0: float = 1.0
+    lambda_d: float = 0.01
+    epsilon: float = 1e-3
+    K_pos: float = 5.0
+    K_ori: float = 2.0
 
 
 class QPController:
     def __init__(self, config: ControllerConfig, n_joints: int):
         self.config = config
         self.n = n_joints
-        self.m = 4  # 3 positional + 1 orientation constraints
+        self.m = 4
 
-        # Hessian matrix P penalizes joint velocities and slack variables
         self.P_qp = np.block(
             [
                 [
@@ -50,11 +43,10 @@ class QPController:
         Jr: np.ndarray,
         r_error: np.ndarray,
         v_des: np.ndarray,
+        G_ineq: np.ndarray | None = None,
+        h_ineq: np.ndarray | None = None,
     ) -> np.ndarray:
-        """
-        Solves the velocity-level inverse kinematics QP.
-        Returns the optimal joint velocity vector dot(q).
-        """
+
         q_current = q_current.reshape(-1, 1)
         q_min = q_min.reshape(-1, 1)
         q_max = q_max.reshape(-1, 1)
@@ -64,7 +56,7 @@ class QPController:
         # 1. Joint limit avoidance (Secondary objective)
         q_mean = (q_max + q_min) / 2.0
         q_range_sq = np.square(q_max - q_min)
-        q_range_sq[q_range_sq < 1e-6] = 1e-6  # Prevent division by zero
+        q_range_sq[q_range_sq < 1e-6] = 1e-6
 
         grad_H = (q_current - q_mean) / q_range_sq
         q_dot_0 = -self.config.k0 * grad_H
@@ -81,30 +73,38 @@ class QPController:
             ]
         )
 
-        # Equality constraint: Jr * dot(q) - w = task_rhs
         A_qp = np.hstack([Jr, -np.identity(self.m)])
 
-        # Inequality constraints: limit bounds translated to velocities
         lb_dq = ((q_min - q_current) / self.config.dt + self.config.epsilon).flatten()
         ub_dq = ((q_max - q_current) / self.config.dt - self.config.epsilon).flatten()
 
         lb_qp = np.concatenate([lb_dq, np.full(self.m, -np.inf)])
         ub_qp = np.concatenate([ub_dq, np.full(self.m, np.inf)])
 
-        P_qp_sparse = sp.csc_matrix(self.P_qp)
-        A_qp_sparse = sp.csc_matrix(A_qp)
+        # 4. Integrate explicit inequality constraints (e.g., CBF)
+        G_qp = None
+        h_qp = None
+        if G_ineq is not None and h_ineq is not None:
+            # Pad G matrix with zeros for the m slack variables
+            k_constraints = G_ineq.shape[0]
+            G_qp = np.hstack([G_ineq, np.zeros((k_constraints, self.m))])
+            h_qp = h_ineq.flatten()
 
         solution = qpsolvers.solve_qp(
-            P=P_qp_sparse,
+            P=csc_matrix(self.P_qp),
             q=q_qp,
-            A=A_qp_sparse,
+            A=csc_matrix(A_qp),
             b=task_rhs.flatten(),
+            G=csc_matrix(G_qp),
+            h=h_qp,
             lb=lb_qp,
             ub=ub_qp,
             solver="osqp",
         )
 
         if solution is None:
-            raise RuntimeError("QP solver infeasible. Simulation step failed.")
+            raise RuntimeError(
+                "QP solver infeasible. Safety constraint likely conflicts with joint limits."
+            )
 
         return solution[: self.n].reshape((self.n, 1))
