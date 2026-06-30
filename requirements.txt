@@ -6,3 +6,4 @@ pre-commit
 black
 qpsolvers
 qpsolvers[osqp]
+tqdm

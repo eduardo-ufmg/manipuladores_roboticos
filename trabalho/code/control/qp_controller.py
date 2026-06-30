@@ -40,6 +40,7 @@ class QPController:
         q_current: np.ndarray,
         q_min: np.ndarray,
         q_max: np.ndarray,
+        qd_max: np.ndarray,
         Jr: np.ndarray,
         r_error: np.ndarray,
         v_des: np.ndarray,
@@ -50,6 +51,7 @@ class QPController:
         q_current = q_current.reshape(-1, 1)
         q_min = q_min.reshape(-1, 1)
         q_max = q_max.reshape(-1, 1)
+        qd_max = qd_max.reshape(-1, 1)
         r_error = r_error.reshape(-1, 1)
         v_des = v_des.reshape(3, 1)
 
@@ -72,8 +74,13 @@ class QPController:
 
         A_qp = np.hstack([Jr, -np.identity(self.m)])
 
-        lb_dq = ((q_min - q_current) / self.config.dt + self.config.epsilon).flatten()
-        ub_dq = ((q_max - q_current) / self.config.dt - self.config.epsilon).flatten()
+        lb_dq = np.maximum(
+            -qd_max, (q_min - q_current) / self.config.dt + self.config.epsilon
+        ).flatten()
+
+        ub_dq = np.minimum(
+            qd_max, (q_max - q_current) / self.config.dt - self.config.epsilon
+        ).flatten()
 
         lb_qp = np.concatenate([lb_dq, np.full(self.m, -np.inf)])
         ub_qp = np.concatenate([ub_dq, np.full(self.m, np.inf)])
@@ -81,17 +88,18 @@ class QPController:
         G_qp = None
         h_qp = None
         if G_ineq is not None and h_ineq is not None:
-
             k_constraints = G_ineq.shape[0]
             G_qp = np.hstack([G_ineq, np.zeros((k_constraints, self.m))])
             h_qp = h_ineq.flatten()
+
+        G_sparse = csc_matrix(G_qp) if G_qp is not None else None
 
         solution = qpsolvers.solve_qp(
             P=csc_matrix(self.P_qp),
             q=q_qp,
             A=csc_matrix(A_qp),
             b=task_rhs.flatten(),
-            G=csc_matrix(G_qp),
+            G=G_sparse,
             h=h_qp,
             lb=lb_qp,
             ub=ub_qp,
