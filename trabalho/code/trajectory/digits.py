@@ -3,7 +3,7 @@ from typing import TypeAlias
 Stroke: TypeAlias = list[tuple[float, float]]
 Digit: TypeAlias = list[Stroke]
 
-# Piecewise-linear, normalized [0, 1] Cartesian coordinates.
+
 DIGITS: dict[str, Digit] = {
     "0": [
         [

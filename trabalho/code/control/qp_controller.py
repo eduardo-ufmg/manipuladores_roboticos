@@ -53,7 +53,6 @@ class QPController:
         r_error = r_error.reshape(-1, 1)
         v_des = v_des.reshape(3, 1)
 
-        # 1. Joint limit avoidance (Secondary objective)
         q_mean = (q_max + q_min) / 2.0
         q_range_sq = np.square(q_max - q_min)
         q_range_sq[q_range_sq < 1e-6] = 1e-6
@@ -61,11 +60,9 @@ class QPController:
         grad_H = (q_current - q_mean) / q_range_sq
         q_dot_0 = -self.config.k0 * grad_H
 
-        # 2. Task Right-Hand Side constraint formulation
         feedforward = np.vstack([v_des, [[0.0]]])
         task_rhs = -self.K_matrix @ r_error + feedforward
 
-        # 3. Assemble QP matrices
         q_qp = np.concatenate(
             [
                 -self.config.lambda_d * q_dot_0.flatten(),
@@ -81,11 +78,10 @@ class QPController:
         lb_qp = np.concatenate([lb_dq, np.full(self.m, -np.inf)])
         ub_qp = np.concatenate([ub_dq, np.full(self.m, np.inf)])
 
-        # 4. Integrate explicit inequality constraints (e.g., CBF)
         G_qp = None
         h_qp = None
         if G_ineq is not None and h_ineq is not None:
-            # Pad G matrix with zeros for the m slack variables
+
             k_constraints = G_ineq.shape[0]
             G_qp = np.hstack([G_ineq, np.zeros((k_constraints, self.m))])
             h_qp = h_ineq.flatten()

@@ -56,15 +56,13 @@ class Cylinder:
         point = point.flatten()
         v_cp = point - self.center
 
-        # Project vector onto the longitudinal axis
         proj_u = np.dot(v_cp, self.u_axis)
 
-        # Rejection vector (strictly radial)
         v_rad = v_cp - proj_u * self.u_axis
         r = np.linalg.norm(v_rad)
 
         if r < 1e-6:
-            # Singularity handling if exact center is queried
+
             return -self.radius, self.normal_ref
 
         normal = v_rad / r

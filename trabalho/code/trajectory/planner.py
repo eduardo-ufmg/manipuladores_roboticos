@@ -42,15 +42,13 @@ class WritingPlanner:
     def __init__(self, surface: WritingSurface):
         self.surface = surface
 
-        # Sizing conventions per specification
         self.digit_width = 0.12
         self.digit_height = 0.18
         self.approach_distance = 0.05
 
-        # Kinematic constraints
-        self.write_speed = 0.05  # m/s
-        self.transition_speed = 0.10  # m/s
-        self.dt = 0.01  # Trajectory sample rate (100 Hz)
+        self.write_speed = 0.05
+        self.transition_speed = 0.10
+        self.dt = 0.01
 
     def plan(self, code: str, start_time: float = 0.0) -> Trajectory:
         """Assembles the writing trajectory for a 1- to 3-digit code."""
@@ -78,7 +76,6 @@ class WritingPlanner:
                 u_start = u_offset + pos_start_2d[0] * self.digit_width
                 v_start = v_offset + pos_start_2d[1] * self.digit_height
 
-                # Free-space transition to the new stroke
                 if u_last is not None and v_last is not None:
                     transition_pts, current_time = self._generate_surface_cubic_motion(
                         u_last,
@@ -92,7 +89,6 @@ class WritingPlanner:
                     )
                     trajectory.extend(transition_pts)
 
-                # Approach motion (drop to surface)
                 approach_pts, current_time = self._generate_surface_cubic_motion(
                     u_start,
                     v_start,
@@ -105,13 +101,11 @@ class WritingPlanner:
                 )
                 trajectory.extend(approach_pts)
 
-                # Writing motion
                 write_pts, current_time = self._generate_writing_motion(
                     spline, u_offset, v_offset, current_time
                 )
                 trajectory.extend(write_pts)
 
-                # Retreat motion (lift from surface)
                 pos_end_2d = spline.evaluate_position(np.array([spline.length]))[0]
                 u_end = u_offset + pos_end_2d[0] * self.digit_width
                 v_end = v_offset + pos_end_2d[1] * self.digit_height
@@ -144,7 +138,7 @@ class WritingPlanner:
         start_time: float,
     ) -> tuple[Trajectory, float]:
         """Generates a minimum-jerk transition safely wrapping around the target manifold."""
-        # Cartesian proxy distance for time parameterization
+
         distance = np.sqrt((uf - u0) ** 2 + (vf - v0) ** 2 + (df - d0) ** 2)
         if distance < 1e-6:
             return [], start_time
@@ -174,7 +168,6 @@ class WritingPlanner:
                 u, v, du_dt, dv_dt, offset=d
             )
 
-            # Incorporate orthogonal velocity to preserve C1 continuity during approach/retreat
             vel = base_vel + dd_dt * normal
 
             pts.append(TrajectoryPoint(pos, vel, -normal, t_current))
@@ -199,7 +192,6 @@ class WritingPlanner:
             u = u_offset + pos_2d[0] * self.digit_width
             v = v_offset + pos_2d[1] * self.digit_height
 
-            # Temporarily evaluate to extract unscaled spatial speed
             _, vel_3d_unscaled, _ = self.surface.evaluate_kinematics(
                 u, v, du_ds, dv_ds, offset=0.0
             )

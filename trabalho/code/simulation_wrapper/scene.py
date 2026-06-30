@@ -2,17 +2,16 @@ import numpy as np
 import uaibot as ub
 from geometry.cylinder import Cylinder
 
-# ── Trail configuration ────────────────────────────────────────────────────────
-_TRAIL_RADIUS = 0.004  # 4 mm spheres — visible but unobtrusive
-_TRAIL_SAMPLE = 4  # place one marker every N control cycles
-_TRAIL_SNAP_EPS = 1e-3  # seconds between the two snap keyframes
-_TRAIL_DEFAULT_MAX = int(3e3)  # pre-allocated ball count; tune to trajectory length
-_TRAIL_COLOR_START = (0.18, 0.52, 1.00)  # blue  — oldest marker
-_TRAIL_COLOR_END = (1.00, 0.22, 0.22)  # red   — most recent marker
+_TRAIL_RADIUS = 0.004
+_TRAIL_SAMPLE = 4
+_TRAIL_SNAP_EPS = 1e-3
+_TRAIL_DEFAULT_MAX = int(3e3)
+_TRAIL_COLOR_START = (0.18, 0.52, 1.00)
+_TRAIL_COLOR_END = (1.00, 0.22, 0.22)
 
 
 def _off_screen() -> np.matrix:
-    """4×4 HTM with translation far outside the scene (used to hide objects)."""
+    """4x4 HTM with translation far outside the scene."""
     htm = np.identity(4)
     htm[0:3, 3] = [100.0, 100.0, 100.0]
     return np.matrix(htm)
@@ -21,7 +20,7 @@ def _off_screen() -> np.matrix:
 def _trail_color(t: float) -> str:
     """
     Linear RGB interpolation between start and end trail colours.
-    t ∈ [0, 1]:  0 → oldest (blue),  1 → newest (red).
+    t ∈ [0, 1].
     Returns a CSS hex string accepted by UAIbot's color argument.
     """
     c0, c1 = _TRAIL_COLOR_START, _TRAIL_COLOR_END
@@ -43,20 +42,18 @@ class Scene:
         htm_surface = np.identity(4)
         htm_surface[0:3, 0] = surface.normal_ref
         htm_surface[0:3, 1] = surface.v_tangent
-        # uaibot's cylinder length is drawn along its local Z-axis
         htm_surface[0:3, 2] = surface.u_axis
         htm_surface[0:3, 3] = surface.center
 
         self.board_viz = ub.Cylinder(
             name="cylinder_surface",
             radius=surface.radius,
-            height=0.8,  # Total visual length of the cylinder (can exceed writable width)
+            height=surface.width * 1.1,  # to leave some room
             htm=np.matrix(htm_surface),
             color="white",
             opacity=0.8,
         )
 
-        # ── Moving target marker (existing behaviour) ──────────────────────────
         self.target_marker = ub.Ball(
             name="target_marker",
             radius=0.015,
@@ -64,12 +61,6 @@ class Scene:
             htm=np.matrix(np.identity(4)),
         )
 
-        # ── Trail markers ──────────────────────────────────────────────────────
-        # All balls are pre-allocated and parked off-screen. During record_frame
-        # each one is given two keyframes in rapid succession: one off-screen
-        # (at t − ε) and one at the target position (at t), so it snaps into
-        # place without drifting in from outside the scene.
-        # Colours age from blue (oldest) to red (most recent).
         self._trail_balls = [
             ub.Ball(
                 name=f"trail_{i}",
@@ -79,8 +70,8 @@ class Scene:
             )
             for i in range(max_trail_points)
         ]
-        self._trail_idx = 0  # next ball to place
-        self._cycle_count = 0  # cycles since the last marker was dropped
+        self._trail_idx = 0
+        self._cycle_count = 0
 
         self.sim = ub.Simulation(
             [self.robot, self.board_viz, self.target_marker, *self._trail_balls]
@@ -100,7 +91,6 @@ class Scene:
         htm_target[0:3, 3] = target_pos.flatten()
         self.target_marker.add_ani_frame(time=time, htm=np.matrix(htm_target))
 
-        # Trail: drop a marker every _TRAIL_SAMPLE cycles only during the write phase
         if is_writing:
             self._cycle_count += 1
             if self._cycle_count >= _TRAIL_SAMPLE and self._trail_idx < len(
@@ -114,12 +104,11 @@ class Scene:
                 htm_ball = np.identity(4)
                 htm_ball[0:3, 3] = htm_effector[0:3, 3].flatten()
 
-                # Frame just before: still off-screen (avoids interpolated drift)
                 ball.add_ani_frame(
                     time=max(0.0, time - _TRAIL_SNAP_EPS),
                     htm=_off_screen(),
                 )
-                # Frame at current time: snap to position and stay there permanently
+
                 ball.add_ani_frame(time=time, htm=np.matrix(htm_ball))
 
                 self._trail_idx += 1

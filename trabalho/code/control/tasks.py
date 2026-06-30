@@ -25,10 +25,8 @@ def compute_task_error(
 
     r = np.zeros((4, 1))
 
-    # 1. Position error
     r[0:3, 0:1] = current_pos - desired_pos
 
-    # 2. Orientation error: 1 - dot(z_d, z_e)
     r[3, 0] = 1.0 - np.dot(desired_z_axis.T, current_z_axis)[0, 0]
 
     return r
@@ -46,10 +44,8 @@ def compute_task_jacobian(
     current_z_axis = current_z_axis.reshape(3, 1)
     desired_z_axis = desired_z_axis.reshape(3, 1)
 
-    # 1. Position Jacobian (extract upper 3xN of Jg)
     Jr[0:3, :] = Jg[0:3, :]
 
-    # 2. Orientation Jacobian (Soft projection)
     S_ze = skew_symmetric(current_z_axis)
     Jr[3, :] = desired_z_axis.T @ S_ze @ Jg[3:6, :]
 

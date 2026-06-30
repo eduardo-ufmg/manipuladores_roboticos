@@ -4,7 +4,6 @@ import uaibot as ub
 
 class RobotInterface:
     def __init__(self):
-        # Utilizing Kuka LBR iiwa as defined in your reference script
         self.robot = ub.Robot.create_kuka_lbr_iiwa()
         self.n_joints = len(self.robot.q)
 
