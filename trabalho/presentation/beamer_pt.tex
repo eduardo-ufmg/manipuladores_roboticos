@@ -1,0 +1,168 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{amsmath, amssymb, bm}
+
+\setbeamertemplate{footline}[frame number]
+
+\title{Robô de Codificação de Bobina}
+\author{Clara Temponi Marigo, \\
+        Eduardo Henrique Basilio de Carvalho, \\
+        João Vitor Braga da Silva Alves, \\
+        Lucas Rocha de Almeida do Carmo, \\
+        Luiz Miguel Santiago, \\
+        Renan Neves da Silva
+        }
+\date{}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}{Instanciação da Superfície}
+Uma superfície cilíndrica $C$ é instanciada com uma geometria delimitadora aleatória e uma base ortonormal.
+\begin{equation}
+    R \sim \mathcal{U}(0.1, 0.6), \quad W \sim \mathcal{U}(0.4, 1.0)
+\end{equation}
+\begin{equation}
+    B_{cyl} = [u_{axis}, v_{tangent}, n_{ref}]
+\end{equation}
+onde $R$ é o raio do cilindro, $W$ é a largura do cilindro, $B_{cyl}$ é o sistema de referência espacial, $u_{axis}$ é o eixo longitudinal, $v_{tangent}$ é a tangente transversal e $n_{ref}$ é a normal de referência.
+\end{frame}
+
+\begin{frame}{Trajetória de Engajamento}
+Uma transição inicial engaja o efetuador final da configuração inicial para a superfície usando um polinômio de jerk mínimo.
+\begin{equation}
+    p(\tau) = p_{init} + \sigma(\tau)(p_{home} - p_{init})
+\end{equation}
+onde $p_{init} \in \mathbb{R}^3$ é a pose inicial de escrita na superfície e $p_{home} \in \mathbb{R}^3$ é a configuração espacial inicial.
+\end{frame}
+
+\begin{frame}{Geração Contínua de Traços}
+Para cada caractere na sequência de entrada, os pontos de cada traço são interpolados em uma curva suave para calcular as correspondentes coordenadas planares.
+\begin{equation}
+    S_{2D}(t) = \text{make\_interp\_spline}(P)
+\end{equation}
+\begin{equation}
+    (u(s), v(s)) = S_{2D}(t(s))
+\end{equation}
+onde $P \in \mathbb{R}^{M \times 2}$ é a matriz de coordenadas do traço, $S_{2D}(t)$ é a spline cúbica contínua e $(u(s), v(s))$ são as coordenadas bidimensionais avaliadas no comprimento de arco $s$.
+\end{frame}
+
+\begin{frame}{Projeção na Superfície}
+As coordenadas parametrizadas por arco são projetadas na superfície cilíndrica para avaliar a trajetória espacial tridimensional.
+\begin{equation}
+    \theta(s) = \frac{v(s) - H/2}{R}
+\end{equation}
+\begin{equation}
+    p(s) = c_{cyl} + \left(u(s) - \frac{W}{2}\right)u_{axis} + R \left( \cos(\theta(s))n_{ref} + \sin(\theta(s))v_{tangent} \right)
+\end{equation}
+onde $\theta(s)$ é o deslocamento angular ao longo do eixo transversal, $H$ é a altura do cilindro, $c_{cyl}$ é o centro geométrico do cilindro e $p(s) \in \mathbb{R}^3$ é a posição cartesiana resultante.
+\end{frame}
+
+\begin{frame}{Transições de Jerk Mínimo}
+Sequências de transição interpolam dentro do espaço de parâmetros da superfície através de três fases: retração ortogonal, translação e engajamento com a superfície.
+\begin{equation}
+    \sigma(\tau) = -2\tau^3 + 3\tau^2
+\end{equation}
+\begin{equation}
+    \xi(\tau) = \xi_0 + \sigma(\tau)(\xi_f - \xi_0)
+\end{equation}
+onde $\tau \in [0, 1]$ é o tempo normalizado, $\sigma(\tau)$ é o perfil escalar de jerk mínimo e $\xi = [u, v, d]^T \in \mathbb{R}^3$ é o estado contínuo de parâmetros da superfície contendo as coordenadas de superfície e o deslocamento espacial ortogonal.
+\end{frame}
+
+\begin{frame}{Trajetória de Retração}
+Uma transição terminal retrai o efetuador final da superfície de volta para uma configuração cartesiana inicial.
+\begin{equation}
+    p(\tau) = p_{end} + \sigma(\tau)(p_{home} - p_{end})
+\end{equation}
+onde $p_{end} \in \mathbb{R}^3$ é a pose final de escrita na superfície e $p_{home} \in \mathbb{R}^3$ é a configuração espacial retraída.
+\end{frame}
+
+\begin{frame}{Cinemática Direta}
+A malha de controle em tempo discreto mapeia o vetor de configuração de juntas para os sistemas de coordenadas espaciais do efetuador final usando as funções \texttt{jac\_geo} e \texttt{fkm} do módulo \texttt{uaibot}.
+\begin{equation}
+    J_{g,k}, x_k, z_k = \text{FK}(q_k)
+\end{equation}
+onde $q_k \in \mathbb{R}^7$ é a configuração de juntas no passo $k$, $x_k \in \mathbb{R}^3$ é a posição cartesiana do efetuador final, $z_k \in \mathbb{S}^2$ é o vetor unitário do eixo z e $J_{g,k} \in \mathbb{R}^{6 \times 7}$ é o Jacobiano geométrico espacial.
+\end{frame}
+
+\begin{frame}{Erro de Tarefa e Jacobiano}
+O erro de tarefa agrega a diferença de rastreamento translacional e a perda de orientação escalar.
+
+\begin{equation}
+    e = \begin{bmatrix} x_k - x_{des} \\ 1 - z_{des}^T z_k \end{bmatrix}
+\end{equation}
+\begin{equation}
+    J_{r} = \begin{bmatrix} J_{g, 0:3} \\ z_{des}^T S(z_k) J_{g, 3:6} \end{bmatrix}
+\end{equation}
+onde $e \in \mathbb{R}^4$ é o erro de tarefa composto, $x_{des}$ e $z_{des}$ são a posição e orientação de referência, $J_r \in \mathbb{R}^{4 \times 7}$ é o Jacobiano de tarefa projetado e $S(\cdot)$ constrói a matriz anti-simétrica.
+\end{frame}
+
+\begin{frame}{Velocidade Restauradora de Junta}
+Uma velocidade restauradora artificial é calculada para forçar a descida de gradiente linear, afastando a configuração do manipulador dos limites absolutos de hardware.
+\begin{equation}
+    \nabla H_i = \frac{q_{k,i} - \bar{q}_i}{(q_{max, i} - q_{min, i})^2}
+\end{equation}
+\begin{equation}
+    \dot{q}_0 = -k_0 \nabla H
+\end{equation}
+onde $\nabla H \in \mathbb{R}^7$ é o gradiente de penalidade de limite do inverso do quadrado, $q_{min}$ e $q_{max}$ são os limites da junta, $\bar{q}$ é a configuração mediana, $k_0 \in \mathbb{R}$ é o ganho de centralização e $\dot{q}_0 \in \mathbb{R}^7$ é a velocidade restauradora da junta.
+\end{frame}
+
+\begin{frame}{Formulação do Objetivo de Otimização}
+A função de custo penaliza tanto a folga no rastreamento da tarefa quanto os desvios de velocidade no espaço nulo.
+\begin{equation}
+    x_{opt} = \begin{bmatrix} \dot{q}^T & w^T \end{bmatrix}^T
+\end{equation}
+\begin{equation}
+    J_{cost}(\dot{q}, w) = \frac{1}{2} \left( \lambda_d \|\dot{q}\|^2 + \|w\|^2 \right) - \lambda_d \dot{q}_0^T \dot{q}
+\end{equation}
+onde $x_{opt} \in \mathbb{R}^{11}$ é o vetor de decisão combinado, $\dot{q} \in \mathbb{R}^7$ são as velocidades das juntas, $w \in \mathbb{R}^4$ são as variáveis de folga do espaço de tarefa e $\lambda_d \in \mathbb{R}$ é o fator de amortecimento da velocidade da junta.
+\end{frame}
+
+\begin{frame}{Restrição de Igualdade da Tarefa}
+O objetivo primário de rastreamento é formulado como uma igualdade linear restrita pelas variáveis de folga.
+\begin{equation}
+    J_r \dot{q} - w = -K e + v_{des}
+\end{equation}
+onde $K \in \mathbb{R}^{4 \times 4}$ é a matriz diagonal positivo-definida de rigidez da tarefa e $v_{des} \in \mathbb{R}^4$ é a velocidade "de pose" desejada de feedforward.
+\end{frame}
+
+\begin{frame}{Distância Espacial da Superfície}
+A distância escalar ortogonal até o limite da superfície é avaliada para impor estritamente a prevenção de colisões.
+\begin{equation}
+    v_{rad} = (x_k - c_{cyl}) - \left( (x_k - c_{cyl})^T u_{axis} \right) u_{axis}
+\end{equation}
+\begin{equation}
+    d = \|v_{rad}\| - R
+\end{equation}
+onde $v_{rad} \in \mathbb{R}^3$ é o vetor radial ortogonal ao eixo principal e $d \in \mathbb{R}$ é a distância mínima sinalizada para a superfície.
+\end{frame}
+
+\begin{frame}{Restrições de Desigualdade}
+A segurança espacial e as restrições de hardware definem limites rígidos de desigualdade linear nas velocidades das juntas.
+\begin{equation}
+    -n(x_k)^T J_{g, 0:3} \dot{q} \leq \gamma (d - d_{safe})
+\end{equation}
+\begin{equation}
+    \max \left(-\dot{q}_{max}, \frac{q_{min}-q_k}{\Delta t} + \epsilon \right) \leq \dot{q} \leq \min \left(\dot{q}_{max}, \frac{q_{max}-q_k}{\Delta t} - \epsilon \right)
+\end{equation}
+onde $n(x_k) \in \mathbb{S}^2$ é a normal externa à superfície, $\gamma$ é a taxa de convergência da barreira, $d_{safe}$ é a margem espacial estrita, $\dot{q}_{max}$ é o limite de velocidade do atuador, $\Delta t$ é o passo de integração e $\epsilon$ é uma tolerância numérica.
+\end{frame}
+
+\begin{frame}{Integração Cinemática}
+A derivada de estado ideal é avaliada usando a função \texttt{solve\_qp} do módulo \texttt{qpsolvers} e integrada para atualizar a configuração do manipulador.
+\begin{equation}
+    \dot{q}^* = \text{solve\_qp}(J_{cost}, \text{constraints})
+\end{equation}
+\begin{equation}
+    q_{k+1} = q_k + \dot{q}^* \Delta t
+\end{equation}
+onde $\dot{q}^* \in \mathbb{R}^7$ é a solução ótima de velocidade da junta e $q_{k+1} \in \mathbb{R}^7$ é a configuração sequencial atualizada da junta.
+\end{frame}
+
+\begin{frame}{Simulação}
+As etapas desde o calculo da cinemática direta até a integração cinemática são repetidas em um loop de controle em tempo discreto até que a trajetória seja completamente rastreada.
+A simulação é renderizada e salva pela biblioteca \texttt{uaibot} para visualização.
+\end{frame}
+
+\end{document}
